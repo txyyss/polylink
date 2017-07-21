@@ -16,7 +16,7 @@ class AddTorusPolylink(bpy.types.Operator):
     """Add a surface defined by torus-based polylinks"""
     bl_idname = "mesh.primitive_torus_polylink"
     bl_label = "Add Torus Polylink"
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {"REGISTER", "UNDO"}
 
     source = EnumProperty(
         items=[("TETRAHEDRON", "Tetrahedron", "", 1),
@@ -31,6 +31,7 @@ class AddTorusPolylink(bpy.types.Operator):
         name="Rotation",
         description="Rotation around the face normals",
         min=0.00, max=360,
+        step=10,
         default=0.0,
         subtype="ANGLE",
         unit="ROTATION")
@@ -47,14 +48,14 @@ class AddTorusPolylink(bpy.types.Operator):
         description=("Max distance from the face " +
                      "center to the center of the tube"),
         min=0.01, max=10,
-        default=1.0,
+        default=3.0,
         unit="LENGTH")
 
     minorRadius = FloatProperty(
         name="Minor Radius",
         description="The radius of the tube",
         min=0.01, max=10,
-        default=0.3,
+        default=1,
         unit="LENGTH")
 
     amplitude = FloatProperty(
@@ -70,6 +71,14 @@ class AddTorusPolylink(bpy.types.Operator):
         min=1, max=10,
         default=1)
 
+    initAng = FloatProperty(
+        name="Initial Angle",
+        description="Initial angle of tube segments",
+        min=0.00, max=360,
+        step=10,
+        default=0.0,
+        subtype="ANGLE")
+
     uSeg = IntProperty(
         name="u segments",
         description="Number of segments in radial direction",
@@ -80,13 +89,13 @@ class AddTorusPolylink(bpy.types.Operator):
         name="v segments",
         description="Number of segments in axial direction",
         min=10, max=300,
-        default=10)
+        default=40)
 
     def execute(self, context):
         pmesh = trigPolylink(self.source, self.rot, self.faceDis,
                              self.majorRadius, self.amplitude,
                              self.minorRadius, self.factor,
-                             self.vSeg, self.uSeg)
+                             self.initAng, self.vSeg, self.uSeg)
         create_mesh_object(context, pmesh.vertices, [],
                            pmesh.faces, "Polylink")
         return {'FINISHED'}

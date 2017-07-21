@@ -103,10 +103,10 @@ def genTorusFaces(cSeg: int, lSeg: int):
 
 def trigTorus(center: Vector, zN: Vector, xN: Vector,
               r: float, frq: int, atd: float,
-              inradius: float, cSeg: int, lSeg: int):
+              inradius: float, initAng: float, cSeg: int, lSeg: int):
     trigC = trigCircleC(center, zN, xN, r, frq, atd)
     trigT = trigCircleT(zN, xN, r, frq, atd)
-    cPts = [2 * i * pi/cSeg for i in range(cSeg)]
+    cPts = [2 * i * pi/cSeg + initAng for i in range(cSeg)]
     lPts = [2 * i * pi/lSeg for i in range(lSeg)]
     pts = [trigC(t) + inradius *
            (cos(ang) * zN + sin(ang) * zN.cross(trigT(t)))
@@ -115,8 +115,9 @@ def trigTorus(center: Vector, zN: Vector, xN: Vector,
 
 
 def trigPolylink(poly: str, rot: float, faceDis: float, r: float,
-                 atd: float, inradius: float, fac: int, lSeg: int, cSeg: int):
+                 atd: float, inradius: float, fac: int, iA: float,
+                 lSeg: int, cSeg: int):
     frq, faceCenters, faceNormals, xNs = getPolylinkInfo(poly, rot, faceDis)
-    meshes = [trigTorus(*tup, r, fac * frq, atd, inradius, cSeg, lSeg)
+    meshes = [trigTorus(*tup, r, fac * frq, atd, inradius, iA, cSeg, lSeg)
               for tup in zip(faceCenters, faceNormals, xNs)]
     return reduce(lambda x, y: x.merge(y), meshes)
