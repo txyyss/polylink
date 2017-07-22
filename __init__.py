@@ -46,6 +46,8 @@ class INFO_MT_mesh_polylink_add(bpy.types.Menu):
         layout.operator_context = 'INVOKE_REGION_WIN'
         layout.operator("mesh.primitive_torus_polylink",
                         text="Torus Polylink")
+        layout.operator("mesh.primitive_torus_knot_polylink",
+                        text="Torus Knot Polylink")
 
 
 def menu_func(self, context):

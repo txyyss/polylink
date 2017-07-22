@@ -1,6 +1,7 @@
 from math import sqrt, cos, sin, pi
 from mathutils import Vector, Quaternion
 from functools import reduce
+from itertools import accumulate
 
 
 class PolyMesh:
@@ -76,6 +77,55 @@ def getPolylinkInfo(polyName: str, rot: float, faceDis: float):
     return (frq, faceCenters, faceNormals, xNs)
 
 
+def genTorusFaces(cSeg: int, lSeg: int):
+    """Generate connecting ids for faces"""
+    return [[j + cSeg * i, (j + cSeg * (i + 1)) % (cSeg * lSeg),
+             (cSeg * (i + 1) + (j + 1) % cSeg) % (cSeg * lSeg),
+             cSeg * i + (j + 1) % cSeg]
+            for i in range(lSeg) for j in range(cSeg)]
+
+
+# ********** Computation of Rotation Minimizing Frames ********** #
+
+
+def computeRMF(x, t, r0: Vector):
+    r = [r0]
+    for i in range(len(t) - 1):
+        v1 = x[i + 1] - x[i]
+        c1 = v1.dot(v1)
+        rL = r[i] - (2 / c1) * v1.dot(r[i]) * v1
+        tL = t[i] - (2 / c1) * v1.dot(t[i]) * v1
+        v2 = t[i + 1] - tL
+        c2 = v2.dot(v2)
+        r.append(rL - (2 / c2) * v2.dot(rL) * v2)
+    return r
+
+
+def euclideanDis(p1: Vector, p2: Vector):
+    t = p1 - p2
+    return sqrt(t.dot(t))
+
+
+def accumulateLengths(x):
+    return list(accumulate([euclideanDis(*i) for i in zip(x, x[1:])]))
+
+
+def closedRMF(x, t, r0: Vector):
+    xWrap = x + [x[0]]
+    tWrap = t + [t[0]]
+    r = computeRMF(xWrap, tWrap, r0)
+    lengths = accumulateLengths(xWrap)
+    totalLength = lengths[-1]
+    lastR = r[-1]
+    ang = (1 if t[0].dot(lastR.cross(r0)) > 0 else -1) * lastR.angle(r0)
+    progress = [0] + [i * ang / totalLength for i in lengths]
+    newR = [Quaternion(i[1], i[2]) * i[0] for i in zip(r, tWrap, progress)]
+    return newR[:-1]
+
+
+# ******************** Torus Polylink ******************** #
+
+
 def trigCircleC(center: Vector, zN: Vector, xN: Vector,
                 r: float, frq: int, atd: float):
     yN = zN.cross(xN)
@@ -94,16 +144,10 @@ def trigCircleT(zN: Vector, xN: Vector, r: float, frq: int, atd: float):
     return lambda t: f(t).normalized()
 
 
-def genTorusFaces(cSeg: int, lSeg: int):
-    return [[j + cSeg * i, (j + cSeg * (i + 1)) % (cSeg * lSeg),
-             (cSeg * (i + 1) + (j + 1) % cSeg) % (cSeg * lSeg),
-             cSeg * i + (j + 1) % cSeg]
-            for i in range(lSeg) for j in range(cSeg)]
-
-
 def trigTorus(center: Vector, zN: Vector, xN: Vector,
               r: float, frq: int, atd: float,
               inradius: float, initAng: float, cSeg: int, lSeg: int):
+    """Generate a single wave-shaped torus"""
     trigC = trigCircleC(center, zN, xN, r, frq, atd)
     trigT = trigCircleT(zN, xN, r, frq, atd)
     cPts = [2 * i * pi/cSeg + initAng for i in range(cSeg)]
@@ -117,7 +161,72 @@ def trigTorus(center: Vector, zN: Vector, xN: Vector,
 def trigPolylink(poly: str, rot: float, faceDis: float, r: float,
                  atd: float, inradius: float, fac: int, iA: float,
                  lSeg: int, cSeg: int):
+    """Generate torus-shaped regular polylink"""
     frq, faceCenters, faceNormals, xNs = getPolylinkInfo(poly, rot, faceDis)
     meshes = [trigTorus(*tup, r, fac * frq, atd, inradius, iA, cSeg, lSeg)
+              for tup in zip(faceCenters, faceNormals, xNs)]
+    return reduce(lambda x, y: x.merge(y), meshes)
+
+
+# ******************** Torus Knot Polylink ******************** #
+
+
+def torusKnotC(center: Vector, zN: Vector, xN: Vector,
+               R: float, r: float, p: int, q: int):
+    yN = zN.cross(xN)
+    return lambda t: (center + (R + r * cos(q * t)) *
+                      (xN * cos(p * t) + yN * sin(p * t)) +
+                      r * zN * sin(q * t))
+
+
+def torusKnotD1(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
+    yN = zN.cross(xN)
+    return lambda t: (q * r * zN * cos(q * t) + p * (R + r * cos(q * t)) *
+                      (yN * cos(p * t) - xN * sin(p * t)) -
+                      q * r * (xN * cos(p * t) + yN * sin(p * t)) * sin(q * t))
+
+
+# def torusKnotD2(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
+#     yN = zN.cross(xN)
+#     return lambda t: (- (p ** 2 * R + (p ** 2 + q ** 2) * r * cos(q * t)) *
+#                       (xN * cos(p * t) + yN * sin(p * t)) -
+#                       q * r * (q * zN + 2 * p * yN * cos(p * t) -
+#                                2 * p * xN * sin(p * t)) * sin(q * t))
+
+
+def torusKnotT(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
+    f = torusKnotD1(zN, xN, R, r, p, q)
+    return lambda t: f(t).normalized()
+
+
+# def torusKnotB(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
+#     fD1 = torusKnotD1(zN, xN, R, r, p, q)
+#     fD2 = torusKnotD2(zN, xN, R, r, p, q)
+#     return lambda t: (fD1(t).cross(fD2(t))).normalized()
+
+def torusKnot(center: Vector, zN: Vector, xN: Vector,
+              R: float, r: float, p: int, q: int, inradius: float,
+              initAng: float, cSeg: int, lSeg: int):
+    tKC = torusKnotC(center, zN, xN, R, r, p, q)
+    tKT = torusKnotT(zN, xN, R, r, p, q)
+    cPts = [2 * i * pi/cSeg + initAng for i in range(cSeg)]
+    lPts = [2 * i * pi/lSeg for i in range(lSeg)]
+    spinePts = [tKC(i) for i in lPts]
+    spineTs = [tKT(i) for i in lPts]
+    r0 = (q * r * zN + p * (r+R) * zN.cross(xN)).cross(
+        - ((p * p + q * q) * r + p * p * R) * xN)
+    r0.normalize()
+    spineRs = closedRMF(spinePts, spineTs, r0)
+    pts = [i[0] + inradius * (cos(ang) * i[1].cross(i[2]) + sin(ang) * i[2])
+           for i in zip(spinePts, spineTs, spineRs) for ang in cPts]
+    return PolyMesh(pts, genTorusFaces(cSeg, lSeg))
+
+
+def torusKnotPolylink(poly: str, rot: float, faceDis: float, R: float,
+                      r: float, p: int, qFac: int, inradius: float,
+                      initAng: float, cSeg: int, lSeg: int):
+    frq, faceCenters, faceNormals, xNs = getPolylinkInfo(poly, rot, faceDis)
+    meshes = [torusKnot(*tup, R, r, p, qFac * frq,
+                        inradius, initAng, cSeg, lSeg)
               for tup in zip(faceCenters, faceNormals, xNs)]
     return reduce(lambda x, y: x.merge(y), meshes)
