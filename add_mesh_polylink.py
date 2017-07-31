@@ -16,7 +16,7 @@ class AddTorusPolylink(bpy.types.Operator):
     """Add a surface defined by torus-based polylinks"""
     bl_idname = "mesh.primitive_torus_polylink"
     bl_label = "Add Torus Polylink"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER", "UNDO", "PRESET"}
 
     source = EnumProperty(
         items=[("TETRAHEDRON", "Tetrahedron", "", 1),
@@ -51,8 +51,8 @@ class AddTorusPolylink(bpy.types.Operator):
         default=3.0,
         unit="LENGTH")
 
-    minorRadius = FloatProperty(
-        name="Minor Radius",
+    tubeRadius = FloatProperty(
+        name="Tube Radius",
         description="The radius of the tube",
         min=0.01, max=10,
         default=1,
@@ -94,7 +94,7 @@ class AddTorusPolylink(bpy.types.Operator):
     def execute(self, context):
         pmesh = trigPolylink(self.source, self.rot, self.faceDis,
                              self.majorRadius, self.amplitude,
-                             self.minorRadius, self.factor,
+                             self.tubeRadius, self.factor,
                              self.initAng, self.vSeg, self.uSeg)
         create_mesh_object(context, pmesh.vertices, [],
                            pmesh.faces, "Polylink")
@@ -105,7 +105,7 @@ class AddTorusKnotPolylink(bpy.types.Operator):
     """Add a surface defined by torus-based polylinks"""
     bl_idname = "mesh.primitive_torus_knot_polylink"
     bl_label = "Add Torus Knot Polylink"
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER", "UNDO", "PRESET"}
 
     source = EnumProperty(
         items=[("TETRAHEDRON", "Tetrahedron", "", 1),
@@ -158,8 +158,8 @@ class AddTorusKnotPolylink(bpy.types.Operator):
         min=1, max=50,
         default=1)
 
-    torusRadius = FloatProperty(
-        name="Torus Radius",
+    tubeRadius = FloatProperty(
+        name="Tube Radius",
         description="Radius of the tube",
         min=0.01, max=10,
         default=1,
@@ -188,7 +188,7 @@ class AddTorusKnotPolylink(bpy.types.Operator):
     def execute(self, context):
         pmesh = torusKnotPolylink(self.source, self.rot, self.faceDis,
                                   self.majorRadius, self.minorRadius,
-                                  self.p, self.qFac, self.torusRadius,
+                                  self.p, self.qFac, self.tubeRadius,
                                   self.initAng, self.uSeg, self.vSeg)
         create_mesh_object(context, pmesh.vertices, [],
                            pmesh.faces, "Polylink")
