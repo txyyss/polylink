@@ -81,6 +81,8 @@ def menu_func(self, context):
 
 
 def register():
+    if __name__ != "polylink":
+        bpy.utils.register_module("polylink")
     bpy.utils.register_module(__name__)
     # Add "Extras" menu to the "Add Mesh" menu
     bpy.types.INFO_MT_mesh_add.append(menu_func)
@@ -89,6 +91,8 @@ def register():
 def unregister():
     bpy.types.INFO_MT_mesh_add.remove(menu_func)
     bpy.utils.unregister_module(__name__)
+    if __name__ != "polylink":
+        bpy.utils.unregister_module("polylink")
 
 
 if __name__ == "__main__":
