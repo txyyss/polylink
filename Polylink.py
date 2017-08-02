@@ -1,3 +1,26 @@
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
+
+#
+#  Contributor: Shengyi Wang
+#  Contact:     txyyss@gmail.com
+#
+
 from math import sqrt, cos, sin, pi
 from mathutils import Vector, Quaternion
 from functools import reduce
@@ -186,23 +209,10 @@ def torusKnotD1(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
                       q * r * (xN * cos(p * t) + yN * sin(p * t)) * sin(q * t))
 
 
-# def torusKnotD2(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
-#     yN = zN.cross(xN)
-#     return lambda t: (- (p ** 2 * R + (p ** 2 + q ** 2) * r * cos(q * t)) *
-#                       (xN * cos(p * t) + yN * sin(p * t)) -
-#                       q * r * (q * zN + 2 * p * yN * cos(p * t) -
-#                                2 * p * xN * sin(p * t)) * sin(q * t))
-
-
 def torusKnotT(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
     f = torusKnotD1(zN, xN, R, r, p, q)
     return lambda t: f(t).normalized()
 
-
-# def torusKnotB(zN: Vector, xN: Vector, R: float, r: float, p: int, q: int):
-#     fD1 = torusKnotD1(zN, xN, R, r, p, q)
-#     fD2 = torusKnotD2(zN, xN, R, r, p, q)
-#     return lambda t: (fD1(t).cross(fD2(t))).normalized()
 
 def torusKnot(center: Vector, zN: Vector, xN: Vector,
               R: float, r: float, p: int, q: int, inradius: float,
