@@ -78,7 +78,7 @@ class AddTorusPolylink(bpy.types.Operator):
         name="Tube Radius",
         description="The radius of the tube",
         min=0.01, max=10,
-        default=1,
+        default=0.5,
         unit="LENGTH")
 
     amplitude = FloatProperty(
@@ -185,7 +185,7 @@ class AddTorusKnotPolylink(bpy.types.Operator):
         name="Tube Radius",
         description="Radius of the tube",
         min=0.01, max=10,
-        default=1,
+        default=0.5,
         unit="LENGTH")
 
     initAng = FloatProperty(
