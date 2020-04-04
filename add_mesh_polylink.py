@@ -21,9 +21,11 @@
 #  Contact:     txyyss@gmail.com
 #
 
-from polylink.Polylink import trigPolylink, torusKnotPolylink
+from .Polylink import trigPolylink, torusKnotPolylink
 import bpy
 from bpy.props import EnumProperty, FloatProperty, IntProperty
+from bpy_extras.object_utils import AddObjectHelper, object_data_add
+from bpy.types import Operator
 
 
 def create_mesh_object(context, verts, edges, faces, name):
@@ -31,11 +33,10 @@ def create_mesh_object(context, verts, edges, faces, name):
     me.from_pydata(verts, edges, faces)
     me.update()
 
-    from bpy_extras import object_utils
-    return object_utils.object_data_add(context, me, operator=None)
+    return object_data_add(context, me, operator=None)
 
 
-class AddTorusPolylink(bpy.types.Operator):
+class AddTorusPolylink(Operator, AddObjectHelper):
     """Add a surface defined by torus-based polylinks"""
     bl_idname = "mesh.primitive_torus_polylink"
     bl_label = "Add Torus Polylink"
@@ -124,7 +125,7 @@ class AddTorusPolylink(bpy.types.Operator):
         return {'FINISHED'}
 
 
-class AddTorusKnotPolylink(bpy.types.Operator):
+class AddTorusKnotPolylink(Operator, AddObjectHelper):
     """Add a surface defined by torus-based polylinks"""
     bl_idname = "mesh.primitive_torus_knot_polylink"
     bl_label = "Add Torus Knot Polylink"

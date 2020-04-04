@@ -84,7 +84,7 @@ def vector_mean(vectors, num: int):
 
 def rotate_direction(rot: float, point: Vector,
                      center: Vector, normal: Vector):
-    return (Quaternion(normal, rot) * point - center).normalized()
+    return (Quaternion(normal, rot) @ point - center).normalized()
 
 
 def getPolylinkInfo(polyName: str, rot: float, faceDis: float):
@@ -142,7 +142,7 @@ def closedRMF(x, t, r0: Vector):
     lastR = r[-1]
     ang = (1 if t[0].dot(lastR.cross(r0)) > 0 else -1) * lastR.angle(r0)
     progress = [0] + [i * ang / totalLength for i in lengths]
-    newR = [Quaternion(i[1], i[2]) * i[0] for i in zip(r, tWrap, progress)]
+    newR = [Quaternion(i[1], i[2]) @ i[0] for i in zip(r, tWrap, progress)]
     return newR[:-1]
 
 
